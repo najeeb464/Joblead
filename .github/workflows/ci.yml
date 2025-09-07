@@ -63,7 +63,9 @@ jobs:
           pip install pytest pytest-django   # ensure pytest exists
 
       - name: Run migrations
-        run: python manage.py migrate --noinput
+        run: |
+          python manage.py makemigrations --noinput
+          python manage.py migrate --noinput
 
       - name: Run tests
         run: python manage.py test --verbosity=2
