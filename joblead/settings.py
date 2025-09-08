@@ -14,6 +14,7 @@ from pathlib import Path
 import dj_database_url
 from dotenv import load_dotenv
 import os
+from datetime import timedelta
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
@@ -32,7 +33,7 @@ SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "jango-insecure-q(lb3-3)7q4kljn-j=3-
 DEBUG = os.getenv("DJANGO_DEBUG", "true").lower() in ("1", "true", "yes")
 ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
 
-
+USE_SQLITE = os.getenv("USE_SQLITE", "True").lower() in ("true", "1", "yes")
 # Application definition
 
 INSTALLED_APPS = [
@@ -42,6 +43,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django_filters',
+    'rest_framework',
     'authentication',
     'jobs',
     'equipment',
@@ -91,12 +94,42 @@ AUTH_USER_MODEL = 'authentication.User'
 #     }
 # }
 
+# DATABASE_URL = os.getenv("DATABASE_URL", "postgres://postgres:postgres@db:5432/postgres") 
+# DATABASES = {"default": dj_database_url.parse(DATABASE_URL, conn_max_age=600)}
 
+
+if USE_SQLITE:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
+    }
+else:
+    # PostgreSQL via DATABASE_URL
+    DATABASE_URL = os.getenv(
+        "DATABASE_URL",
+        "postgres://postgres:postgres@db:5432/postgres"
+    )
+    DATABASES = {
+        "default": dj_database_url.parse(DATABASE_URL, conn_max_age=600)
+    }
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
+    'DEFAULT_FILTER_BACKENDS': (
+        'django_filters.rest_framework.DjangoFilterBackend',
+    ),
+}
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=2),  # 2 days
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7), # optional, defaults to 1 day
+    'ROTATE_REFRESH_TOKENS': False,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'UPDATE_LAST_LOGIN': False,
 }
 CELERY_BEAT_SCHEDULE = {
     'update-overdue-jobs-daily': {
@@ -107,8 +140,7 @@ CELERY_BEAT_SCHEDULE = {
 
 
 
-DATABASE_URL = os.getenv("DATABASE_URL", "postgres://postgres:postgres@db:5432/postgres") 
-DATABASES = {"default": dj_database_url.parse(DATABASE_URL, conn_max_age=600)}
+
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
 
@@ -155,3 +187,5 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CELERY_BROKER_URL = 'redis://redis:6379/0'
 CELERY_RESULT_BACKEND = 'redis://redis:6379/0'
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+
+APPEND_SLASH=False

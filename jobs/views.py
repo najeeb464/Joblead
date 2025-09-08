@@ -14,6 +14,8 @@ from django.db.models import Avg, F, ExpressionWrapper, DurationField
 from logs.models import AuditLog
 from rest_framework.exceptions import ValidationError
 
+from .filters import JobFilter
+
 # class JobViewSet(viewsets.ModelViewSet):
 #     queryset = Job.objects.all()
 #     serializer_class = JobSerializer
@@ -29,6 +31,8 @@ class JobViewSet(viewsets.ModelViewSet):
     queryset = Job.objects.all()
     serializer_class = JobSerializer
     permission_classes = [IsAuthenticated & IsAdminOrSalesAgent]
+    # filterset_fields = ['status', 'priority', 'assigned_to', 'created_by', 'scheduled_date']
+    filterset_class = JobFilter
 
     def perform_create(self, serializer):
         job = serializer.save(created_by=self.request.user)
@@ -53,7 +57,8 @@ class JobViewSet(viewsets.ModelViewSet):
 class JobTaskViewSet(viewsets.ModelViewSet):
     queryset            = JobTask.objects.select_related('job').all()
     serializer_class    = JobTaskSerializer
-    permission_classes  = [IsAuthenticated & IsAssignedTechnician]  
+    permission_classes  = [IsAuthenticated & IsAssignedTechnician]
+    filterset_fields = ['status', 'job', 'order']  
 
     def perform_create(self, serializer):
         task = serializer.save()
